@@ -1,6 +1,6 @@
 ---
 layout: page
-title: 博文目录
+title: 欢迎来到我的博客
 tagline: 
 ---
 {% include JB/setup %}
