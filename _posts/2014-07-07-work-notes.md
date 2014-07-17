@@ -98,6 +98,8 @@ nfs_shares_config=${PATH_TO_YOUR_SHARES_FILE}<br/>
 volume_driver=cinder.volume.drivers.nfs.NfsDriver<br/>
 volume_backend_name=NFS<br/>
 
+cinder type-key lvm1 set volume_backend_name=LVM_ISCSI
+
 
 6.30
 
@@ -134,3 +136,37 @@ sched.start()
 3.[apscheduler](http://pythonhosted.org//APScheduler/)
 
 4.[route](http://routes.readthedocs.org/en/latest/)
+
+7.9
+
+1.[python数据持久存储：pickle模块的基本使用](http://www.cnblogs.com/pzxbc/archive/2012/03/18/2404715.html)
+
+7.10
+
+1.python array
+{% highlight py linenos%}
+from array import array
+
+#'I'表示列表值是int
+a = array('I')
+a.append(3)
+
+{% endhighlight %}
+
+2.math.modf
+{% highlight py linenos %}
+import math
+
+a, b = math.modf(2.3)
+print a, b
+
+
+0.3 2.0
+{% endhighlight %}
+
+3.python random.seed()
+伪随机数生成模块。如果不提供 seed，默认使用系统时间。使用相同的 seed，可以获得完全相同的随机数序列，常用于算法改进测试。
+
+7.15
+
+1.cinder --os-username admin --os-tenant-name admin type-key lvm set volume_backend_name=LVM_iSCSI
