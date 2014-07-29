@@ -198,7 +198,140 @@ class Router(object):
         app = match['controller']
         return app
 {% endhighlight %}
+来看cinder.api.v2.openstack.APIRouter：
+{% highlight py linenos %}
+class APIRouter(base_wsgi.Router):
+    """Routes requests on the API to the appropriate controller and method."""
+    ExtensionManager = None  # override in subclasses
 
+    @classmethod
+    def factory(cls, global_config, **local_config):
+        """Simple paste factory, :class:`cinder.wsgi.Router` doesn't have."""
+        return cls()
 
+    def __init__(self, ext_mgr=None):
+        if ext_mgr is None:
+            if self.ExtensionManager:
+                ext_mgr = self.ExtensionManager()
+            else:
+                raise Exception(_("Must specify an ExtensionManager class"))
 
+        mapper = ProjectMapper()
+        self.resources = {}
+		# 创建routes
+        self._setup_routes(mapper, ext_mgr)
+		# 创建扩展routes
+        self._setup_ext_routes(mapper, ext_mgr)
+        self._setup_extensions(ext_mgr)
+        super(APIRouter, self).__init__(mapper)
 
+    def _setup_ext_routes(self, mapper, ext_mgr):
+        for resource in ext_mgr.get_resources():
+            LOG.debug(_('Extended resource: %s'),
+                      resource.collection)
+
+            wsgi_resource = wsgi.Resource(resource.controller)
+            self.resources[resource.collection] = wsgi_resource
+            kargs = dict(
+                controller=wsgi_resource,
+                collection=resource.collection_actions,
+                member=resource.member_actions)
+
+            if resource.parent:
+                kargs['parent_resource'] = resource.parent
+
+            mapper.resource(resource.collection, resource.collection, **kargs)
+
+            if resource.custom_routes_fn:
+                resource.custom_routes_fn(mapper, wsgi_resource)
+
+    def _setup_extensions(self, ext_mgr):
+        for extension in ext_mgr.get_controller_extensions():
+            collection = extension.collection
+            controller = extension.controller
+
+            if collection not in self.resources:
+                LOG.warning(_('Extension %(ext_name)s: Cannot extend '
+                              'resource %(collection)s: No such resource'),
+                            {'ext_name': extension.extension.name,
+                             'collection': collection})
+                continue
+
+            LOG.debug(_('Extension %(ext_name)s extending resource: '
+                        '%(collection)s'),
+                      {'ext_name': extension.extension.name,
+                       'collection': collection})
+
+            resource = self.resources[collection]
+            resource.register_actions(controller)
+            resource.register_extensions(controller)
+
+    def _setup_routes(self, mapper, ext_mgr):
+        raise NotImplementedError
+{% endhighlight %}
+
+再来看cinder.api.v2.router.APIRouter：
+{% highlight py linenos %}
+class APIRouter(cinder.api.openstack.APIRouter):
+    """Routes requests on the API to the appropriate controller and method."""
+    ExtensionManager = extensions.ExtensionManager
+
+    def _setup_routes(self, mapper, ext_mgr):
+        self.resources['versions'] = versions.create_resource()
+        mapper.connect("versions", "/",
+                       controller=self.resources['versions'],
+                       action='show')
+
+        mapper.redirect("", "/")
+
+        self.resources['volumes'] = volumes.create_resource(ext_mgr)
+        mapper.resource("volume", "volumes",
+                        controller=self.resources['volumes'],
+                        collection={'detail': 'GET'},
+                        member={'action': 'POST'})
+
+        self.resources['types'] = types.create_resource()
+        mapper.resource("type", "types",
+                        controller=self.resources['types'])
+
+        self.resources['snapshots'] = snapshots.create_resource(ext_mgr)
+        mapper.resource("snapshot", "snapshots",
+                        controller=self.resources['snapshots'],
+                        collection={'detail': 'GET'},
+                        member={'action': 'POST'})
+
+        self.resources['limits'] = limits.create_resource()
+        mapper.resource("limit", "limits",
+                        controller=self.resources['limits'])
+
+        self.resources['snapshot_metadata'] = \
+            snapshot_metadata.create_resource()
+        snapshot_metadata_controller = self.resources['snapshot_metadata']
+
+        mapper.resource("snapshot_metadata", "metadata",
+                        controller=snapshot_metadata_controller,
+                        parent_resource=dict(member_name='snapshot',
+                                             collection_name='snapshots'))
+
+        mapper.connect("metadata",
+                       "/{project_id}/snapshots/{snapshot_id}/metadata",
+                       controller=snapshot_metadata_controller,
+                       action='update_all',
+                       conditions={"method": ['PUT']})
+
+        self.resources['volume_metadata'] = \
+            volume_metadata.create_resource()
+        volume_metadata_controller = self.resources['volume_metadata']
+
+        mapper.resource("volume_metadata", "metadata",
+                        controller=volume_metadata_controller,
+                        parent_resource=dict(member_name='volume',
+                                             collection_name='volumes'))
+
+        mapper.connect("metadata",
+                       "/{project_id}/volumes/{volume_id}/metadata",
+                       controller=volume_metadata_controller,
+                       action='update_all',
+                       conditions={"method": ['PUT']})
+{% endhighlight %}
+扩展的一些api是通过extensions.ExtensionManager实现的。

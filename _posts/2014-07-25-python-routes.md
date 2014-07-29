@@ -1,4 +1,4 @@
-tia---
+---
 layout: post
 title: "python routes"
 description: ""
@@ -77,6 +77,7 @@ map.connect(..., requirements=ARTICLE_REQS)
 #### Conditions
 
 Conditions决定匹配何种请求。conditions参数是一个字典，有三个key：
+
 methon
 
 大写的HTTP方法列表，请求的方法必须是其中某一种。
@@ -135,3 +136,207 @@ map.connect('/entries/{id:\d+}{.format:json}')
 
 #### Submappers
 
+如果有相同的Key-value参数，可以用Submapper来添加route。有两种语法，一个使用`with`，一个不用：
+{% highlight py linenos %}
+# Using 'with'
+with map.submapper(controller="home") as m:
+    m.connect("home", "/", action="splash")
+    m.connect("index", "/index", action="index")
+
+# Not using 'with'
+m = map.submapper(controller="home")
+m.connect("home", "/", action="splash")
+m.connect("index", "/index", action="index")
+
+# Both of these syntaxes create the following routes::
+# "/"      => {"controller": "home", action="splash"}
+# "/index" => {"controller": "home", action="index"}
+{% endhighlight %}
+可以使用`path_prefix`参数：
+{% highlight py linenos %}
+with map.submapper(path_prefix="/admin", controller="admin") as m:
+    m.connect("admin_users", "/users", action="users")
+    m.connect("admin_databases", "/databases", action="databases")
+
+# /admin/users     => {"controller": "admin", "action": "users"}
+# /admin/databases => {"controller": "admin", "action": "databases"}
+{% endhighlight %}
+`.submapper`的参数必须是key-value。
+
+#### Submapper helpers
+
+{% highlight py linenos %}
+with map.submapper(controller="home") as m:
+    m.connect("home", "/", action="splash")
+    m.connect("index", "/index", action="index")
+{% endhighlight %}
+可以写成：
+{% highlight py linenos %}
+with map.submapper(controller="home", path_prefix="/") as m:
+    m.action("home", action="splash")
+    m.link("index")
+{% endhighlight %}
+`action`在submapper的path（上例中是'/'）上生成route。而`link`根据相关的path生成route。
+
+还有一些其他的action，`index`，`new`，`create`，`show`，`edit`，`update`和`delete`。
+{% highlight py linenos %}
+with map.submapper(controller="entries", path_prefix="/entries") as entries:
+    entries.index()
+    with entries.submapper(path_prefix="/{id}") as entry:
+        entry.show()
+{% endhighlight %}
+
+{% highlight py linenos %}
+with map.submapper(controller="entries", path_prefix="/entries",
+                   actions=["index"]) as entries:
+    entries.submapper(path_prefix="/{id}", actions=["show"])
+{% endhighlight %}
+
+{% highlight py linenos %}
+map.collection(collection_name="entries", member_name="entry",
+               controller="entries",
+               collection_actions=["index"], member_actions["show"])
+{% endhighlight %}
+
+
+## RESTful services
+
+map.resource使Restful风格的url更加容易，它创建了一个'add/modify/delete'route集。
+{% highlight py linenos %}
+map.resource("message", "messages")
+
+# The above command sets up several routes as if you had typed the
+# following commands:
+map.connect("messages", "/messages",
+    controller="messages", action="create",
+    conditions=dict(method=["POST"]))
+map.connect("messages", "/messages",
+    controller="messages", action="index",
+    conditions=dict(method=["GET"]))
+map.connect("formatted_messages", "/messages.{format}",
+    controller="messages", action="index",
+    conditions=dict(method=["GET"]))
+map.connect("new_message", "/messages/new",
+    controller="messages", action="new",
+    conditions=dict(method=["GET"]))
+map.connect("formatted_new_message", "/messages/new.{format}",
+    controller="messages", action="new",
+    conditions=dict(method=["GET"]))
+map.connect("/messages/{id}",
+    controller="messages", action="update",
+    conditions=dict(method=["PUT"]))
+map.connect("/messages/{id}",
+    controller="messages", action="delete",
+    conditions=dict(method=["DELETE"]))
+map.connect("edit_message", "/messages/{id}/edit",
+    controller="messages", action="edit",
+    conditions=dict(method=["GET"]))
+map.connect("formatted_edit_message", "/messages/{id}.{format}/edit",
+    controller="messages", action="edit",
+    conditions=dict(method=["GET"]))
+map.connect("message", "/messages/{id}",
+    controller="messages", action="show",
+    conditions=dict(method=["GET"]))
+map.connect("formatted_message", "/messages/{id}.{format}",
+    controller="messages", action="show",
+    conditions=dict(method=["GET"]))
+{% endhighlight %}
+
+{% highlight py linenos %}
+GET    /messages        => messages.index()    => url("messages")
+POST   /messages        => messages.create()   => url("messages")
+GET    /messages/new    => messages.new()      => url("new_message")
+PUT    /messages/1      => messages.update(id) => url("message", id=1)
+DELETE /messages/1      => messages.delete(id) => url("message", id=1)
+GET    /messages/1      => messages.show(id)   => url("message", id=1)
+GET    /messages/1/edit => messages.edit(id)   => url("edit_message", id=1)
+{% endhighlight %}
+
+#### Resource options
+
+controller
+
+collection
+{% highlight py linenos %}
+map.resource("message", "messages", collection={"rss": "GET"})
+# "GET /messages/rss"  =>  ``Messages.rss()``.
+# Defines a named route "rss_messages".
+{% endhighlight %}
+
+member
+{% highlight py linenos %}
+map.resource('message', 'messages', member={'mark':'POST'})
+# "POST /message/1/mark"  =>  ``Messages.mark(1)``
+# also adds named route "mark_message"
+
+map.resource("message", "messages", member={"ask_delete": "GET"}
+# "GET /message/1/ask_delete"   =>   ``Messages.ask_delete(1)``.
+# Also adds a named route "ask_delete_message".
+{% endhighlight %}
+
+new
+{% highlight py linenos %}
+map.resource("message", "messages", new={"preview": "POST"})
+# "POST /messages/new/preview"
+{% endhighlight %}
+
+path_prefix
+
+所有url的前置。
+
+name_prefix
+
+{% highlight py linenos %}
+map.resource("message", "messages", controller="categories",
+    path_prefix="/category/{category_id}",
+    name_prefix="category_")
+# GET /category/7/message/1
+# Adds named route "category_message"
+{% endhighlight %}
+
+parent_resource
+
+一个包含父resource信息的字典，在创建嵌套resource使用。它应该包含member_name和collection_name。
+
+如果指定parent_resource而没有path_prefix，path_prefix将用'<parent collection name>/:<parent member name>_id'生成。
+
+如果指定parent_resource而没有name_prefix，name_prefix将用'<parent member name>_'生成。
+
+{% highlight pycon %}
+>>> m = Mapper()
+>>> m.resource('location', 'locations',
+...            parent_resource=dict(member_name='region',
+...                                 collection_name='regions'))
+>>> # path_prefix is "regions/:region_id"
+>>> # name prefix is "region_"
+>>> url('region_locations', region_id=13)
+'/regions/13/locations'
+>>> url('region_new_location', region_id=13)
+'/regions/13/locations/new'
+>>> url('region_location', region_id=13, id=60)
+'/regions/13/locations/60'
+>>> url('region_edit_location', region_id=13, id=60)
+'/regions/13/locations/60/edit'
+
+Overriding generated path_prefix:
+
+>>> m = Mapper()
+>>> m.resource('location', 'locations',
+...            parent_resource=dict(member_name='region',
+...                                 collection_name='regions'),
+...            path_prefix='areas/:area_id')
+>>> # name prefix is "region_"
+>>> url('region_locations', area_id=51)
+'/areas/51/locations'
+
+Overriding generated name_prefix:
+
+>>> m = Mapper()
+>>> m.resource('location', 'locations',
+...            parent_resource=dict(member_name='region',
+...                                 collection_name='regions'),
+...            name_prefix='')
+>>> # path_prefix is "regions/:region_id"
+>>> url('locations', region_id=51)
+'/regions/51/locations'
+{% endhighlight %}

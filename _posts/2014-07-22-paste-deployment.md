@@ -9,7 +9,7 @@ tags: []
 
 转载自[Python.Paste指南之Deploy](http://blog.csdn.net/ztejiagn/article/details/8722765)
 
-Paste.Deploy主要是用来载入WSGI中的Web App使用，其核心函数是loadapp(),下文中PD就指代Paste.Deploy。
+Paste.Deploy主要是用来载入WSGI中的Web App应用，其核心函数是loadapp(),下文中PD就指代Paste.Deploy。
 
 1.简介及安装<br/>
 Paste Deployment是一种机制，通过loadapp函数和一个配置文件或者egg包来载入WSGI应用。可以通过Pip或者easy_install安装。

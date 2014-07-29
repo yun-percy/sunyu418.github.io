@@ -287,17 +287,21 @@ def rebalance():
 	# 更新上次移动的信息，包括移动的part和移动的时间
     self._update_last_part_moves()
     last_balance = 0
+	# 调整part的数目，返回调整后的part和被移除的part数目
     new_parts, removed_part_count = self._adjust_replica2part2dev_size()
     retval += removed_part_count
+	# 重新分配part
     self._reassign_parts(new_parts)
     retval += len(new_parts)
     while True:
+		# 分配被移除设备上的part
         reassign_parts = self._gather_reassign_parts()
         self._reassign_parts(reassign_parts)
         retval += len(reassign_parts)
         while self._remove_devs:
             self.devs[self._remove_devs.pop()['id']] = None
         balance = self.get_balance()
+		# 如果balance小于1或者所有的part都都分配了。退出循环
         if balance < 1 or abs(last_balance - balance) < 1 or \
                 retval == self.parts:
             break
@@ -307,8 +311,7 @@ def rebalance():
     return retval, balance
 {% endhighlight %}
 
-
-
+建环主要就是create，add，rebalance三步。其他的如search，list_parts，remove等都比较简单，这里不做分析。
 
 
 
