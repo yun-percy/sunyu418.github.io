@@ -90,9 +90,9 @@ def main(arguments=None):
 我们来看下Commands里有多少主要的方法：
 create， default， search， list\_parts， add， set\_weight， set\_info， remove， rebalance， validate， write\_ring， write\_builder， set\_min\_part\_hours， set\_replicas
 
-通过建环的过程来分析每一个函数。
+通过建环的过程来分析几个重要的函数。
 
-    swift-ring-builder account.builder create 18 3 1
+    swift-ring-builder account.builder create 3 2 1
 
 1.create 方法，生成buidler file:
 {% highlight py linenos%}
@@ -126,7 +126,8 @@ def create():
 {% endhighlight %}
 命令的第4,5,6参数分别是part_power, repicas, min_part_hours
 
-    swift-ring-builder account.builder add z1zone-192.168.99.103:6002/sdd 100
+    swift-ring-builder account.builder add r1z1-192.168.0.2:6002/sdd 3
+	swift-ring-builder account.builder add r1z2-192.168.0.3:6002/sdd 1
 
 2.add 方法，添加设备到builder file中：
 {% highlight py linenos %}
@@ -175,6 +176,54 @@ def add():
     builder.save(argv[1])
     exit(EXIT_SUCCESS)
 {% endhighlight %}
+两个设备的属性如下：
+<table>
+  <tr>
+    <td></td>
+    <td>dev0</td>
+    <td>dev1</td>
+  </tr>
+  <tr>
+    <td>id</td>
+    <td>0</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td>weight</td>
+    <td>3</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td>region</td>
+    <td>1</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td>zone</td>
+    <td>1</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>ip</td>
+    <td>192.168.0.2</td>
+    <td>192.168.0.3</td>
+  </tr>
+  <tr>
+    <td>port</td>
+    <td>6002</td>
+    <td>6002</td>
+  </tr>
+  <tr>
+    <td>device</td>
+    <td>sdd</td>
+    <td>sdd</td>
+  </tr>
+  <tr>
+    <td>parts_wanted</td>
+    <td>12</td>
+    <td>4</td>
+  </tr>
+</table>
 
     swift-ring-builder account.builder rebalance
 
