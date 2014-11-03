@@ -1,12 +1,6 @@
 ---
-layout: page
-title: 欢迎来到AcidRain的博客
+layout: default
+title: Welcome
 tagline: 
 ---
-{% include JB/setup %}
-
-
-<ul>
-  {% assign posts_collate = site.posts %}
-  {% include JB/posts_collate %}
-</ul>
+# Welcome

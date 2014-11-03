@@ -2,7 +2,7 @@
 layout: post
 title: "work notes"
 description: ""
-category: 
+category: Openstack
 tags: []
 ---
 {% include JB/setup %}

@@ -2,7 +2,7 @@
 layout: post
 title: "eventlet study"
 description: ""
-category: 
+category: Openstack
 tags: []
 ---
 {% include JB/setup %}

@@ -2,7 +2,7 @@
 layout: post
 title: "Openstack oslo.config介绍"
 description: ""
-category: 
+category: Openstack
 tags: []
 ---
 {% include JB/setup %}

@@ -2,7 +2,7 @@
 layout: post
 title: "python routes"
 description: ""
-category: 
+category: Openstack
 tags: []
 ---
 {% include JB/setup %}

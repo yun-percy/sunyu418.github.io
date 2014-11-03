@@ -2,7 +2,7 @@
 layout: post
 title: "openstack cinder api源码分析"
 description: ""
-category: 
+category: Openstack
 tags: []
 ---
 {% include JB/setup %}

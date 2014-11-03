@@ -2,7 +2,7 @@
 layout: post
 title: "paste deployment"
 description: ""
-category: 
+category: Openstack
 tags: []
 ---
 {% include JB/setup %}

@@ -2,7 +2,7 @@
 layout: post
 title: "opensatck swift-ring-builder源码分析"
 description: ""
-category: 
+category: Openstack
 tags: []
 ---
 {% include JB/setup %}
